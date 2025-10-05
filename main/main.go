@@ -15,7 +15,7 @@ func main() {
 	//url := "https://www.cartoonnetwork.com/activate/"
 	//request := link.Get_website(url)
 
-	file, err := os.Open("examples/ex1.html")
+	file, err := os.Open("examples/ex3.html")
 	if err != nil {
 		log.Fatal("Error opening file: %v", err)
 	}
@@ -31,5 +31,13 @@ func main() {
 
 	fmt.Println("Successfully parsed HTML. Traversing nodes:")
 
-	link.LinkParser(doc)
+	var parsedLinks []link.Link
+
+	// Parsing links-text
+	parsedLinks = link.TraverseAndParseLinks(doc, parsedLinks)
+
+	for i, elemento := range parsedLinks {
+		fmt.Printf("%d-Link{\n	Href: %s,\n	Text:%s,\n}\n", i, elemento.Href, elemento.Text)
+	}
+
 }

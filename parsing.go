@@ -4,6 +4,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 
 	"golang.org/x/net/html"
 )
@@ -19,44 +20,53 @@ func Get_website(url string) io.Reader {
 	return r
 }
 
-func LinkParser(n *html.Node) {
-	// To store link
-	var ElementLink string
-	var LinkText string
-
-	// Check if it is an HTML Element of type <a>
+// Traverse through all nodes of the website and return the parsed links
+func TraverseAndParseLinks(n *html.Node, parsedLinks []Link) []Link {
+	// If we found a <a> link then we traverse to get all the text
 	if n.Type == html.ElementNode && n.Data == "a" {
-		// Extracting link
-		for _, attr := range n.Attr {
-			if attr.Key == "href" {
-				ElementLink = attr.Val
+		var url string
+		var text string
+		// Getting URL
+		for _, attribute := range n.Attr {
+			if attribute.Key == "href" {
+				url = attribute.Val
 			}
 		}
-		// Now every text or HTML element will be a child of <a>
-		// So we are going to extract all text, HTML element or TextElement
-		for inner_c := n.FirstChild; inner_c != nil; inner_c = inner_c.NextSibling {
-			// TextElement
-			if inner_c.Type == html.TextNode {
-				// This text comes directly from <a>. It is a direct child of <a>
-				LinkText = LinkText + inner_c.Data
-
-			}
-			// If the first child of children element es HTML element
-			// That its first child is HTML element
-			// This code ignore nested html that may contain text
-			if inner_c.Type == html.ElementNode && inner_c.FirstChild.Type == html.TextNode {
-				LinkText = LinkText + inner_c.FirstChild.Data
-			}
-		}
-
+		// Getting text  and creating link element for this url-text
+		text = textFinder(n, "")
+		parsedLinks = append(parsedLinks, Link{
+			url,
+			text,
+		})
 	}
-	// Recursing code
+
+	// Recursive, first deep (because we get to the son and then the
+	// son of the son, after the last son we get to the sibling of
+	// the upper layer and so on).
 	for c := n.FirstChild; c != nil; c = c.NextSibling {
-		LinkParser(c)
+		parsedLinks = TraverseAndParseLinks(c, parsedLinks)
 	}
+
+	return parsedLinks
 }
 
-type link struct {
+// Once we find a link element we traverse throughout all its text elements and return a concatenation
+func textFinder(n *html.Node, concatText string) string {
+	// If we find a text element we concatenate it to the current string variable
+	if n.Type == html.TextNode {
+		text := strings.TrimSpace(n.Data) // Avoids blank space, also "\n"
+		if text != "" {
+			concatText = concatText + " " + text
+		}
+	}
+
+	for c := n.FirstChild; c != nil; c = c.NextSibling {
+		concatText = textFinder(c, concatText)
+	}
+	return concatText
+}
+
+type Link struct {
 	Href string
 	Text string
 }
