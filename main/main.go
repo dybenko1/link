@@ -2,27 +2,34 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"link"
 	"log"
-	"net/http"
+	"os"
 
 	"golang.org/x/net/html"
 )
 
 func main() {
 	// Example web site
-	url := "https://www.cartoonnetwork.com/activate/"
+	//url := "https://www.cartoonnetwork.com/activate/"
+	//request := link.Get_website(url)
 
-	resp, err := http.Get(url)
+	file, err := os.Open("examples/ex1.html")
 	if err != nil {
-		log.Fatal("Error making HTTP request %v", err)
+		log.Fatal("Error opening file: %v", err)
 	}
-	defer resp.Body.Close()
 
-	r := resp.Body
+	defer file.Close()
 
-	doc, err := html.Parse(r)
+	var ex_site io.Reader = file
+
+	doc, err := html.Parse(ex_site)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	fmt.Println("Successfully parsed HTML. Traversing nodes:")
-	link.Traversing(doc, 0)
+
+	link.LinkParser(doc)
 }

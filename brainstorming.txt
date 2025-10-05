@@ -1,0 +1,5 @@
+In order to parse the links and the text within that link HTML element i imagine 3 functions.
+
+- One to traverse throughout all HTML Node elements of the website and find <a> elements
+- Another to traverse throughout a <a> element
+The first function will return the slice of all the link object found in all the website

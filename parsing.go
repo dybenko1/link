@@ -1,64 +1,62 @@
 package link
 
 import (
-	"fmt"
-	"strings"
+	"io"
+	"log"
+	"net/http"
 
 	"golang.org/x/net/html"
 )
 
-func Traversing(n *html.Node, depth int) {
-	// Indent to display each level depending on the depth of the Node in the Tree
-	indent := strings.Repeat("	", depth)
+func Get_website(url string) io.Reader {
 
-	// We identify the type of Node.
-	// They could be an Element (E.g. <p>, <div>),(it includes its Attributes (a property of an element) in "".Attr
-	// When getting attributes we get a Slice, because there could be multiple
-	// Text (What is inside an Element), etc.
-
-	// Part 1: HTML Element
-	if n.Type == html.ElementNode {
-		// The data of an Element Node is the tag, E.g. "p", out of "<p>"
-		fmt.Printf("%s<%s>\n", indent, n.Data)
+	resp, err := http.Get(url)
+	if err != nil {
+		log.Fatal("Error making HTTP request %v", err)
 	}
 
-	// Part 2: Text of HTML Element
-	if n.Type == html.TextNode {
-		text := strings.TrimSpace(n.Data)
-		if text != "" {
-			fmt.Printf("%sText: %s\n", indent, text)
-		}
-	}
-
-	// Recursive Loop
-	for c := n.FirstChild; c != nil; c = c.NextSibling {
-		Traversing(c, depth+1)
-	}
-
+	r := resp.Body
+	return r
 }
 
-// Recursive function to traverse the node tree
-func Traverse_2(n *html.Node, depth int) {
-	// Print indentation for three visualization
-	indent := strings.Repeat("	", depth)
+func LinkParser(n *html.Node) {
+	// To store link
+	var ElementLink string
+	var LinkText string
 
-	// Check if the node is an Element (like <html>, <h1>, <p>)
-	if n.Type == html.ElementNode {
-		fmt.Printf("%s<%s>\n", indent, n.Data)
-	}
-
-	// Check if the node is Text and print its content
-	if n.Type == html.TextNode {
-		// Only print not empty text nodes after trimming whitespace
-		text := strings.TrimSpace(n.Data)
-		if text != "" {
-			fmt.Printf("%s(Text: %s)\n", indent, text)
+	// Check if it is an HTML Element of type <a>
+	if n.Type == html.ElementNode && n.Data == "a" {
+		// Extracting link
+		for _, attr := range n.Attr {
+			if attr.Key == "href" {
+				ElementLink = attr.Val
+			}
 		}
-	}
+		// Now every text or HTML element will be a child of <a>
+		// So we are going to extract all text, HTML element or TextElement
+		for inner_c := n.FirstChild; inner_c != nil; inner_c = inner_c.NextSibling {
+			// TextElement
+			if inner_c.Type == html.TextNode {
+				// This text comes directly from <a>. It is a direct child of <a>
+				LinkText = LinkText + inner_c.Data
 
-	// Recurse on children
+			}
+			// If the first child of children element es HTML element
+			// That its first child is HTML element
+			// This code ignore nested html that may contain text
+			if inner_c.Type == html.ElementNode && inner_c.FirstChild.Type == html.TextNode {
+				LinkText = LinkText + inner_c.FirstChild.Data
+			}
+		}
+
+	}
+	// Recursing code
 	for c := n.FirstChild; c != nil; c = c.NextSibling {
-		Traverse_2(c, depth+1)
+		LinkParser(c)
 	}
+}
 
+type link struct {
+	Href string
+	Text string
 }
