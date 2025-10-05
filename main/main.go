@@ -15,7 +15,7 @@ func main() {
 	//url := "https://www.cartoonnetwork.com/activate/"
 	//request := link.Get_website(url)
 
-	file, err := os.Open("examples/ex3.html")
+	file, err := os.Open("examples/ex4.html")
 	if err != nil {
 		log.Fatal("Error opening file: %v", err)
 	}

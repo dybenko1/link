@@ -22,14 +22,16 @@ func Get_website(url string) io.Reader {
 
 // Traverse through all nodes of the website and return the parsed links
 func TraverseAndParseLinks(n *html.Node, parsedLinks []Link) []Link {
-	// If we found a <a> link then we traverse to get all the text
-	if n.Type == html.ElementNode && n.Data == "a" {
+	// Base Case: If we found a <a> link then we traverse to get all the text
+	isLinkElement := n.Type == html.ElementNode && n.Data == "a"
+	if isLinkElement {
 		var url string
 		var text string
 		// Getting URL
 		for _, attribute := range n.Attr {
 			if attribute.Key == "href" {
 				url = attribute.Val
+				break
 			}
 		}
 		// Getting text  and creating link element for this url-text
@@ -43,10 +45,16 @@ func TraverseAndParseLinks(n *html.Node, parsedLinks []Link) []Link {
 	// Recursive, first deep (because we get to the son and then the
 	// son of the son, after the last son we get to the sibling of
 	// the upper layer and so on).
-	for c := n.FirstChild; c != nil; c = c.NextSibling {
-		parsedLinks = TraverseAndParseLinks(c, parsedLinks)
+	// If we have identified a LinkHTMLElement we do not need to go deeper, but to its sibling
+	if isLinkElement {
+		for c := n.NextSibling; c != nil; c = c.NextSibling {
+			parsedLinks = TraverseAndParseLinks(c, parsedLinks)
+		}
+	} else {
+		for c := n.FirstChild; c != nil; c = c.NextSibling {
+			parsedLinks = TraverseAndParseLinks(c, parsedLinks)
+		}
 	}
-
 	return parsedLinks
 }
 
